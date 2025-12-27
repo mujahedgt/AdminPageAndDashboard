@@ -1,0 +1,146 @@
+﻿@model AdminPageAndDashboard.Models.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Security Admin Dashboard</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-md-5 col-lg-4">
+                <div class="card shadow-lg border-0 animate-in" style="background: linear-gradient(135deg, var(--card-bg) 0%, var(--card-bg) 100%);">
+                    <!-- Header -->
+                    <div class="card-header bg-gradient text-center py-4" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;">
+                        <i class="fas fa-shield-alt fa-2x mb-2" style="display: block; margin-bottom: 0.5rem;"></i>
+                        <h2 class="mb-1">Security Admin</h2>
+                        <p class="mb-0 small opacity-75">Sign in to access the dashboard</p>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <!-- Error Alert -->
+                        @if (TempData["Error"] != null)
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>@TempData["Error"]</span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+
+                        <!-- Login Form -->
+                        <form asp-action="Login" method="post" id="loginForm" novalidate>
+                            <!-- Username Field -->
+                            <div class="mb-3">
+                                <label asp-for="Username" class="form-label">
+                                    <i class="fas fa-user"></i> Username
+                                </label>
+                                <input asp-for="Username" 
+                                       class="form-control form-control-lg" 
+                                       placeholder="Enter your username"
+                                       required 
+                                       minlength="3"
+                                       autocomplete="username" />
+                                <span asp-validation-for="Username" class="invalid-feedback d-block mt-1"></span>
+                            </div>
+
+                            <!-- Password Field -->
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label">
+                                    <i class="fas fa-lock"></i> Password
+                                </label>
+                                <input asp-for="Password" 
+                                       class="form-control form-control-lg" 
+                                       placeholder="Enter your password"
+                                       required 
+                                       minlength="6"
+                                       autocomplete="current-password" />
+                                <span asp-validation-for="Password" class="invalid-feedback d-block mt-1"></span>
+                            </div>
+
+                            <!-- Remember Me -->
+                            <div class="form-check mb-4">
+                                <input asp-for="RememberMe" class="form-check-input" id="rememberMe" />
+                                <label class="form-check-label" for="rememberMe">
+                                    Remember me
+                                </label>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                                <i class="fas fa-sign-in-alt"></i> Sign In
+                            </button>
+                        </form>
+
+                        <hr class="my-3" />
+
+                        <!-- Demo Credentials -->
+                        <div class="alert alert-info small">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Demo Credentials:</strong><br>
+                            Username: <code>admin</code><br>
+                            Password: <code>admin123</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        <i class="fas fa-lock"></i> Secure authentication required
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/additional-methods.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $("#loginForm").validate({
+                rules: {
+                    username: {
+                        required: true,
+                        minlength: 3
+                    },
+                    password: {
+                        required: true,
+                        minlength: 6
+                    }
+                },
+                messages: {
+                    username: {
+                        required: "Username is required",
+                        minlength: "Username must be at least 3 characters"
+                    },
+                    password: {
+                        required: "Password is required",
+                        minlength: "Password must be at least 6 characters"
+                    }
+                },
+                highlight: function(element) {
+                    $(element).addClass('is-invalid').removeClass('is-valid');
+                },
+                unhighlight: function(element) {
+                    $(element).removeClass('is-invalid').addClass('is-valid');
+                },
+                errorClass: 'is-invalid',
+                validClass: 'is-valid'
+            });
+        });
+    </script>
+</body>
+</html>

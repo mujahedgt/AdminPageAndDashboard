@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="@(Context.Session.GetString("Theme") ?? "light")">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Security Admin</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <a asp-controller="Dashboard" asp-action="Index">Security Admin</a>
+            </div>
+
+            <div class="navbar-menu">
+                <a asp-controller="Dashboard" asp-action="Index" class="nav-link">Dashboard</a>
+                <a asp-controller="Requests" asp-action="Index" class="nav-link">Requests</a>
+                <a asp-controller="Models" asp-action="Index" class="nav-link">ML Model</a>
+                <a asp-controller="Users" asp-action="Index" class="nav-link">Users</a>
+            </div>
+
+            <div class="nav-user">
+                <span>@Context.Session.GetString("FullName") (@Context.Session.GetString("Username"))</span>
+
+                <!-- Dark Mode Toggle -->
+                <button id="themeToggle" class="theme-toggle" title="Toggle Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+
+                <a asp-controller="Auth" asp-action="Logout" class="nav-link">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show">
+                @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show">
+                @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @RenderBody()
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Dark Mode Toggle with Persistence
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+
+            html.setAttribute('data-theme', newTheme);
+            document.getElementById('themeToggle').innerHTML =
+                newTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+
+            // Save preference
+            fetch('/Dashboard/SetTheme?theme=' + newTheme);
+        });
+
+        // Load saved theme icon
+        if (document.documentElement.getAttribute('data-theme') === 'dark') {
+            document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i>';
+        }
+    </script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

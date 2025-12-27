@@ -1,0 +1,139 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- Configuration Data -->
+<div data-refresh-interval="@ViewBag.RefreshIntervalMs" 
+     data-max-requests="@ViewBag.MaxRequestsToDisplay" 
+     style="display:none;"></div>
+
+<!-- Page Title -->
+<div class="mb-4">
+    <h1 class="h3">
+        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+    </h1>
+    <small class="text-muted">Real-time security monitoring and analytics</small>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="mb-1 opacity-75">Total Requests</p>
+                        <h3 id="totalRequests" class="mb-0">--</h3>
+                    </div>
+                    <i class="fas fa-chart-line fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="mb-1 opacity-75">Anomalies Detected</p>
+                        <h3 id="anomalyCount" class="mb-0">--</h3>
+                    </div>
+                    <i class="fas fa-exclamation-triangle fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="mb-1 opacity-75">Legitimate</p>
+                        <h3 id="legitimateCount" class="mb-0">--</h3>
+                    </div>
+                    <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="mb-1 opacity-75">Anomaly Rate</p>
+                        <h3 id="anomalyRate" class="mb-0">--%</h3>
+                    </div>
+                    <i class="fas fa-chart-pie fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-project-diagram me-2"></i> Routing Breakdown
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="routingChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-line-chart me-2"></i> Anomaly Trend (Last 7 Days)
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="trendChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Requests -->
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-history me-2"></i> Recent Requests
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>IP Address</th>
+                        <th>Endpoint</th>
+                        <th>Classification</th>
+                        <th>Confidence</th>
+                    </tr>
+                </thead>
+                <tbody id="recentRequests">
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <div class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted mt-2">Loading data...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+}

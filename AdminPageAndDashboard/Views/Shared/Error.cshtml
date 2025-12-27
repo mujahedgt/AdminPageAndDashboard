@@ -1,0 +1,58 @@
+﻿@model AdminPageAndDashboard.Models.ViewModels.ErrorViewModel
+@{
+    ViewData["Title"] = "Error";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Error
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title text-danger">An error occurred while processing your request</h5>
+
+                    @if (Model?.ShowRequestId ?? false)
+                    {
+                        <div class="alert alert-info mt-3">
+                            <strong>Request ID:</strong>
+                            <code>@Model.RequestId</code>
+                        </div>
+                    }
+
+                    <div class="mt-4">
+                        <h6>Troubleshooting:</h6>
+                        <ul class="text-muted">
+                            <li>Try refreshing the page</li>
+                            <li>Clear your browser cache</li>
+                            <li>Check your internet connection</li>
+                            <li>Contact your system administrator if the problem persists</li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-4">
+                        @if (Model?.IsDevelopment ?? false)
+                        {
+                            <div class="alert alert-warning">
+                                <h6>Development Information</h6>
+                                <p>@Model?.Message</p>
+                                @if (!string.IsNullOrEmpty(Model?.Exception))
+                                {
+                                    <pre class="bg-light p-3 rounded"><code>@Model.Exception</code></pre>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
+                        <i class="fas fa-home me-2"></i> Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

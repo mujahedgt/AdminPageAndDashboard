@@ -1,0 +1,116 @@
+﻿@{
+    ViewData["Title"] = "ML Model Management";
+}
+
+<!-- Page Title -->
+<div class="mb-4">
+    <h1 class="h3">
+        <i class="fas fa-brain me-2"></i> ML Model Management
+    </h1>
+    <small class="text-muted">Train, monitor, and manage your anomaly detection models</small>
+</div>
+
+<!-- Model Statistics Cards -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="mb-1 opacity-75">Current Version</p>
+                        <h3 id="currentVersion" class="mb-0">--</h3>
+                    </div>
+                    <i class="fas fa-code-branch fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="mb-1 opacity-75">Accuracy</p>
+                        <h3 id="accuracy" class="mb-0">--%</h3>
+                    </div>
+                    <i class="fas fa-check-double fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="mb-1 opacity-75">Last Trained</p>
+                        <h4 id="lastTrained" class="mb-0 small">--</h4>
+                    </div>
+                    <i class="fas fa-history fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Model Training Section -->
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-cog me-2"></i> Model Training
+        </h5>
+        <div class="btn-group" role="group">
+            <button class="btn btn-sm btn-warning" id="btnRetrain" title="Retrain with current data">
+                <i class="fas fa-sync"></i> Retrain
+            </button>
+            <button class="btn btn-sm btn-success" id="btnTrainNew" title="Train new model version">
+                <i class="fas fa-plus"></i> New Version
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="trainingStatus" class="alert alert-info mb-3">
+            <i class="fas fa-info-circle"></i>
+            <span>Ready for training</span>
+        </div>
+        <pre id="trainingLog" 
+             class="bg-dark text-white p-3 rounded" 
+             style="height: 250px; overflow-y: auto; display: none; font-size: 0.85rem;"></pre>
+    </div>
+</div>
+
+<!-- Model Decisions Table -->
+<div class="card shadow-sm mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i> Recent Model Decisions
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0" id="modelDecisionsTable">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>IP Address</th>
+                        <th>Prediction</th>
+                        <th>Confidence</th>
+                        <th>User Correction</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Loading decisions...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/models.js" asp-append-version="true"></script>
+}

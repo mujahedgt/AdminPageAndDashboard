@@ -1,0 +1,795 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "IsolationForestServer",
+    "description": "ML-based anomaly detection service for intelligent request routing (Honeypot/Real System)",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/analyze": {
+      "post": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Analyze Request",
+        "description": "Analyze an incoming HTTP request and determine if it's anomalous\nusing the active Isolation Forest model.",
+        "operationId": "analyze_request_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/training/train": {
+      "post": {
+        "tags": [
+          "Training",
+          "Training"
+        ],
+        "summary": "Train Model",
+        "description": "Training a brand new Isolation Forest model.\nAccepts optional training parameters (contamination, n_estimators).",
+        "operationId": "train_model_training_train_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/training/retrain": {
+      "post": {
+        "tags": [
+          "Training",
+          "Training"
+        ],
+        "summary": "Retrain Model",
+        "description": "Retrain the model using user-corrected labels (feedback loop).\nThis improves detection over time.",
+        "operationId": "retrain_model_training_retrain_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrainRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrainResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/audit/requests": {
+      "get": {
+        "tags": [
+          "Audit",
+          "Audit"
+        ],
+        "summary": "Get Analyzed Requests",
+        "description": "Retrieve analyzed requests with powerful filtering and pagination.\nUsed by security team for investigation and model feedback.",
+        "operationId": "get_analyzed_requests_audit_requests_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page",
+              "default": 20,
+              "title": "Page Size"
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "ip_address",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ip Address"
+            }
+          },
+          {
+            "name": "is_anomaly",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Anomaly"
+            }
+          },
+          {
+            "name": "min_confidence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "maximum": 1,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Confidence"
+            }
+          },
+          {
+            "name": "max_confidence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "maximum": 1,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Confidence"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "has_user_label",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by whether request has user feedback",
+              "title": "Has User Label"
+            },
+            "description": "Filter by whether request has user feedback"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/labeling/label/{request_id}": {
+      "put": {
+        "tags": [
+          "Labeling",
+          "Labeling"
+        ],
+        "summary": "Provide feedback on model prediction",
+        "description": "Mark a request as legitimate or malicious. This data is used to retrain the model.",
+        "operationId": "update_label_labeling_label__request_id__put",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Database ID of the analyzed request",
+              "title": "Request Id"
+            },
+            "description": "Database ID of the analyzed request"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelUpdateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statistics/": {
+      "get": {
+        "tags": [
+          "Statistics",
+          "Statistics"
+        ],
+        "summary": "Get Statistics",
+        "description": "Get comprehensive server and model performance statistics.\nPerfect for monitoring dashboards and health checks.",
+        "operationId": "get_statistics_statistics__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatisticsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalyzeRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "ip_address": {
+            "type": "string",
+            "title": "Ip Address"
+          },
+          "endpoint": {
+            "type": "string",
+            "title": "Endpoint"
+          },
+          "http_method": {
+            "type": "string",
+            "title": "Http Method"
+          },
+          "headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Headers"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_id",
+          "ip_address",
+          "endpoint",
+          "http_method",
+          "headers"
+        ],
+        "title": "AnalyzeRequest"
+      },
+      "AnalyzeResponse": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "isAnomaly": {
+            "type": "boolean",
+            "title": "Isanomaly"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "analyzed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Analyzed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_id",
+          "isAnomaly",
+          "confidence",
+          "analyzed_at"
+        ],
+        "title": "AnalyzeResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LabelUpdateRequest": {
+        "properties": {
+          "user_label": {
+            "type": "boolean",
+            "title": "User Label"
+          },
+          "changed_by": {
+            "type": "string",
+            "title": "Changed By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_label",
+          "changed_by"
+        ],
+        "title": "LabelUpdateRequest"
+      },
+      "LabelUpdateResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "request_id": {
+            "type": "integer",
+            "title": "Request Id"
+          },
+          "old_label": {
+            "type": "boolean",
+            "title": "Old Label"
+          },
+          "new_label": {
+            "type": "boolean",
+            "title": "New Label"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "request_id",
+          "old_label",
+          "new_label",
+          "message"
+        ],
+        "title": "LabelUpdateResponse"
+      },
+      "RetrainRequest": {
+        "properties": {
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_version"
+        ],
+        "title": "RetrainRequest"
+      },
+      "RetrainResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "old_model_version": {
+            "type": "string",
+            "title": "Old Model Version"
+          },
+          "new_model_version": {
+            "type": "string",
+            "title": "New Model Version"
+          },
+          "training_samples": {
+            "type": "integer",
+            "title": "Training Samples"
+          },
+          "corrected_labels_used": {
+            "type": "integer",
+            "title": "Corrected Labels Used"
+          },
+          "accuracy_improvement": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy Improvement"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "old_model_version",
+          "new_model_version",
+          "training_samples",
+          "corrected_labels_used",
+          "message"
+        ],
+        "title": "RetrainResponse"
+      },
+      "StatisticsResponse": {
+        "properties": {
+          "total_requests_analyzed": {
+            "type": "integer",
+            "title": "Total Requests Analyzed"
+          },
+          "anomaly_count": {
+            "type": "integer",
+            "title": "Anomaly Count"
+          },
+          "legitimate_count": {
+            "type": "integer",
+            "title": "Legitimate Count"
+          },
+          "anomaly_rate": {
+            "type": "number",
+            "title": "Anomaly Rate"
+          },
+          "active_model": {
+            "type": "object",
+            "title": "Active Model"
+          },
+          "label_corrections": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Label Corrections"
+          },
+          "average_confidence": {
+            "type": "number",
+            "title": "Average Confidence"
+          },
+          "uptime_hours": {
+            "type": "number",
+            "title": "Uptime Hours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_requests_analyzed",
+          "anomaly_count",
+          "legitimate_count",
+          "anomaly_rate",
+          "active_model",
+          "label_corrections",
+          "average_confidence",
+          "uptime_hours"
+        ],
+        "title": "StatisticsResponse"
+      },
+      "TrainRequest": {
+        "properties": {
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "use_corrected_labels": {
+            "type": "boolean",
+            "title": "Use Corrected Labels",
+            "default": true
+          },
+          "training_params": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Params"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_version"
+        ],
+        "title": "TrainRequest"
+      },
+      "TrainResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "training_samples": {
+            "type": "integer",
+            "title": "Training Samples"
+          },
+          "training_duration_seconds": {
+            "type": "number",
+            "title": "Training Duration Seconds"
+          },
+          "accuracy_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy Score"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "model_version",
+          "training_samples",
+          "training_duration_seconds",
+          "message"
+        ],
+        "title": "TrainResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
