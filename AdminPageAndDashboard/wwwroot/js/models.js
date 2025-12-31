@@ -77,14 +77,22 @@ async function loadModelDecisions() {
             tbody.innerHTML = "";
             data.data.forEach(d => {
                 const row = document.createElement("tr");
+                const requestId = d.request_id || 'N/A';
+                const recordId = d.record_id || 0
+                const button = document.createElement("button");
+                button.className = "btn btn-sm btn-warning";
+                button.textContent = "Correct";
+                button.addEventListener("click", () => changeLabel(recordId));
+                
                 row.innerHTML = `
-                    <td>${d.request_id || 'N/A'}</td>
+                    <td>${requestId}</td>
                     <td><code>${d.client_ip || 'N/A'}</code></td>
                     <td><span class="badge ${d.prediction ? 'bg-danger' : 'bg-success'}">${d.prediction ? 'Anomaly' : 'Normal'}</span></td>
                     <td>${d.confidence ? (d.confidence * 100).toFixed(2) + '%' : 'N/A'}</td>
                     <td>${d.user_label ? 'Yes' : 'No'}</td>
-                    <td><button class="btn btn-sm btn-warning" onclick="changeLabel(${d.request_id})">Correct</button></td>
+                    <td></td>
                 `;
+                row.querySelector("td:last-child").appendChild(button);
                 tbody.appendChild(row);
             });
         }
@@ -106,7 +114,7 @@ async function retrainModel(version) {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
-                "X-CSRF-TOKEN": getCSRFToken()
+                "RequestVerificationToken": getCSRFToken()
             },
             body: JSON.stringify({ modelVersion: version })
         });
@@ -146,7 +154,7 @@ async function trainNewModel(version) {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
-                "X-CSRF-TOKEN": getCSRFToken()
+                "RequestVerificationToken": getCSRFToken()
             },
             body: JSON.stringify({ modelVersion: version, useCorrectedLabels: true })
         });
@@ -173,20 +181,35 @@ async function trainNewModel(version) {
 }
 
 async function changeLabel(requestId) {
+    debugger;
     try {
         const userLabel = confirm("Mark as legitimate? (OK = Legitimate, Cancel = Anomaly)");
         
+        const payload = {
+            requestId: requestId,
+            label: userLabel
+        };
+
+        console.log("Sending request with payload:", payload);
+        console.log("CSRF Token:", getCSRFToken());
+        
         const res = await fetch("/Models/ChangeLabel", {
             method: "POST",
-            headers: { 
+            headers: {
                 "Content-Type": "application/json",
-                "X-CSRF-TOKEN": getCSRFToken()
+                "RequestVerificationToken": getCSRFToken()
             },
-            body: JSON.stringify({ requestId: requestId, label: userLabel })
+            body: JSON.stringify(payload)
         });
+
+
+        console.log("Response status:", res.status);
+        
+        const responseData = await res.json();
+        console.log("Response data:", responseData);
         
         if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            throw new Error(`HTTP ${res.status}: ${JSON.stringify(responseData)}`);
         }
         
         alert("Label updated successfully!");

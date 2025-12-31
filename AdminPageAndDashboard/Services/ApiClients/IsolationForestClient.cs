@@ -127,6 +127,7 @@ namespace AdminPageAndDashboard.Services.ApiClients
 
         /// <summary>
         /// Analyze a request for anomalies using the active Isolation Forest model.
+        /// Now uses enhanced 9-feature detection system.
         /// </summary>
         public async Task<JsonDocument?> AnalyzeRequestAsync(
             string requestId,
@@ -140,7 +141,7 @@ namespace AdminPageAndDashboard.Services.ApiClients
             try
             {
                 var baseUrl = GetBaseUrl();
-                
+
                 var requestBody = new
                 {
                     request_id = requestId,
@@ -152,7 +153,7 @@ namespace AdminPageAndDashboard.Services.ApiClients
                     timestamp = timestamp ?? DateTime.UtcNow
                 };
 
-                var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
+                var json = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync($"{baseUrl}/analyze", content);
@@ -169,26 +170,52 @@ namespace AdminPageAndDashboard.Services.ApiClients
         }
 
         /// <summary>
-        /// Train a brand new Isolation Forest model.
+        /// Train a brand new Isolation Forest model with enhanced 9-feature system.
         /// </summary>
+        /// <param name="modelVersion">Version identifier for the new model</param>
+        /// <param name="useCorrectedLabels">Whether to use user-corrected labels</param>
+        /// <param name="contamination">Expected proportion of anomalies (0.0-0.5, default 0.1)</param>
+        /// <param name="nEstimators">Number of trees in the forest (default 150)</param>
+        /// <param name="maxSamples">Max samples per tree (default 256)</param>
+        /// <param name="recalculateFeatures">Whether to recalculate all features before training (useful for upgrades)</param>
         public async Task<JsonDocument?> TrainModelAsync(
             string modelVersion,
             bool useCorrectedLabels = true,
-            object? trainingParams = null)
+            double? contamination = null,
+            int? nEstimators = null,
+            int? maxSamples = null,
+            bool recalculateFeatures = true)
         {
             try
             {
                 var baseUrl = GetBaseUrl();
 
+                // Build training_params object with only non-null values
+                var trainingParams = new Dictionary<string, object>();
+
+                if (contamination.HasValue)
+                    trainingParams["contamination"] = contamination.Value;
+
+                if (nEstimators.HasValue)
+                    trainingParams["n_estimators"] = nEstimators.Value;
+
+                if (maxSamples.HasValue)
+                    trainingParams["max_samples"] = maxSamples.Value;
+
+                if (recalculateFeatures)
+                    trainingParams["recalculate_features"] = true;
+
                 var requestBody = new
                 {
                     model_version = modelVersion,
                     use_corrected_labels = useCorrectedLabels,
-                    training_params = trainingParams
+                    training_params = trainingParams.Count > 0 ? trainingParams : null
                 };
 
-                var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
+                var json = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                _logger.LogInformation($"Training model {modelVersion} with recalculate_features={recalculateFeatures}");
 
                 var response = await _httpClient.PostAsync($"{baseUrl}/training/train", content);
                 response.EnsureSuccessStatusCode();
@@ -206,15 +233,26 @@ namespace AdminPageAndDashboard.Services.ApiClients
         /// <summary>
         /// Retrain the model using user-corrected labels (feedback loop).
         /// </summary>
-        public async Task<JsonDocument?> RetrainModelAsync(string modelVersion)
+        /// <param name="modelVersion">Version identifier for the retrained model</param>
+        /// <param name="recalculateFeatures">Whether to recalculate all features before retraining</param>
+        public async Task<JsonDocument?> RetrainModelAsync(
+            string modelVersion,
+            bool recalculateFeatures = true)
         {
             try
             {
                 var baseUrl = GetBaseUrl();
 
-                var requestBody = new { model_version = modelVersion };
-                var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
+                var requestBody = new
+                {
+                    model_version = modelVersion,
+                    recalculate_features = recalculateFeatures
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                _logger.LogInformation($"Retraining model {modelVersion} with recalculate_features={recalculateFeatures}");
 
                 var response = await _httpClient.PostAsync($"{baseUrl}/training/retrain", content);
                 response.EnsureSuccessStatusCode();
@@ -233,16 +271,20 @@ namespace AdminPageAndDashboard.Services.ApiClients
         /// Update user feedback label for a specific request.
         /// </summary>
         public async Task<JsonDocument?> UpdateLabelAsync(
-            int requestId,
+            string requestId,
             bool userLabel,
             string changedBy)
         {
             try
             {
-                if (requestId <= 0)
-                    throw new ArgumentException("Request ID must be greater than 0", nameof(requestId));
+                if (string.IsNullOrWhiteSpace(requestId))
+                {
+                    _logger.LogError("UpdateLabelAsync: Request ID is empty");
+                    throw new ArgumentException("Request ID cannot be empty", nameof(requestId));
+                }
 
                 var baseUrl = GetBaseUrl();
+                var url = $"{baseUrl}/labeling/label/{Uri.EscapeDataString(requestId)}";
 
                 var requestBody = new
                 {
@@ -250,20 +292,55 @@ namespace AdminPageAndDashboard.Services.ApiClients
                     changed_by = changedBy
                 };
 
-                var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
+                var json = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PutAsync(
-                    $"{baseUrl}/labeling/label/{requestId}",
-                    content);
+                _logger.LogInformation($"UpdateLabelAsync: Sending PUT request to {url} with payload: {json}");
+
+                var response = await _httpClient.PutAsync(url, content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning($"UpdateLabelAsync failed with status {response.StatusCode}: {responseContent}");
+                }
+
                 response.EnsureSuccessStatusCode();
 
-                var responseContent = await response.Content.ReadAsStringAsync();
-                return JsonDocument.Parse(responseContent);
+                var responseContent2 = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"UpdateLabelAsync successful: {responseContent2}");
+                return JsonDocument.Parse(responseContent2);
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogWarning($"Failed to update label: {ex.Message}");
+                _logger.LogError($"Failed to update label - HTTP error: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to update label - Unexpected error: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Get feature importance analysis from the current model.
+        /// Helps understand which features contribute most to anomaly detection.
+        /// </summary>
+        public async Task<JsonDocument?> GetFeatureImportanceAsync()
+        {
+            try
+            {
+                var baseUrl = GetBaseUrl();
+                var response = await _httpClient.GetAsync($"{baseUrl}/training/feature-importance");
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonDocument.Parse(content);
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogWarning($"Failed to fetch feature importance: {ex.Message}");
                 return null;
             }
         }

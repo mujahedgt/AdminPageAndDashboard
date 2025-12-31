@@ -53,6 +53,9 @@
         @RenderBody()
     </div>
 
+    <!-- CSRF Token for AJAX requests -->
+    @Html.AntiForgeryToken()
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Dark Mode Toggle with Persistence

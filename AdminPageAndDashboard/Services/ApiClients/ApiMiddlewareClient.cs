@@ -18,7 +18,7 @@ namespace AdminPageAndDashboard.Services.ApiClients
             _logger = logger;
             
             // Set a reasonable timeout
-            _httpClient.Timeout = TimeSpan.FromSeconds(5);
+            _httpClient.Timeout = TimeSpan.FromSeconds(60);
         }
 
         private string GetBaseUrl()
@@ -231,6 +231,42 @@ namespace AdminPageAndDashboard.Services.ApiClients
             catch (Exception ex)
             {
                 _logger.LogError($"Unexpected error fetching cached request: {ex.Message}");
+                return null;
+            }
+        }
+        public async Task<JsonDocument?> GetChartDataAsync()
+        {
+            try
+            {
+                var baseUrl = GetBaseUrl();
+                var url = $"{baseUrl}/audit/chart";
+
+                _logger.LogDebug($"Fetching chart data from: {url}");
+
+                var response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonDocument.Parse(content);
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogWarning($"Failed to fetch chart data: {ex.Message}");
+                return null;
+            }
+            catch (TaskCanceledException ex)
+            {
+                _logger.LogWarning($"Chart data request timeout: {ex.Message}");
+                return null;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError($"Invalid JSON response from chart data endpoint: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Unexpected error fetching chart data: {ex.Message}");
                 return null;
             }
         }

@@ -1,6 +1,7 @@
-﻿using AdminPageAndDashboard.Services.ApiClients;
-using AdminPageAndDashboard.Filters;
+﻿using AdminPageAndDashboard.Filters;
+using AdminPageAndDashboard.Services.ApiClients;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace AdminPageAndDashboard.Controllers
 {
@@ -60,36 +61,85 @@ namespace AdminPageAndDashboard.Controllers
                 }
 
                 var root = data.RootElement;
-                
-                // Extract data safely
-                var totalPages = root.TryGetProperty("totalPages", out var totalPagesEl) 
-                    ? totalPagesEl.GetInt32() 
+
+                // Pagination
+                var totalPages = root.TryGetProperty("totalPages", out var tp)
+                    ? tp.GetInt32()
                     : 1;
 
-                var requestsData = root.TryGetProperty("data", out var dataEl) 
-                    ? dataEl.EnumerateArray().ToList() 
-                    : new List<System.Text.Json.JsonElement>();
+                var currentPage = root.TryGetProperty("page", out var cp)
+                    ? cp.GetInt32()
+                    : 1;
 
-                _logger.LogInformation($"Retrieved {requestsData.Count} requests from API");
+                // Items array
+                var items = root.TryGetProperty("items", out var itemsEl) && itemsEl.ValueKind == JsonValueKind.Array
+                    ? itemsEl.EnumerateArray()
+                    : Enumerable.Empty<JsonElement>();
+
+                _logger.LogInformation($"Retrieved {items.Count()} requests from API");
 
                 var response = new
                 {
-                    data = requestsData.Select(r => new
+                    data = items.Select(item =>
                     {
-                        request_id = r.GetProperty("request_id").GetString(),
-                        timestamp = r.GetProperty("timestamp").GetString(),
-                        client_ip = r.TryGetProperty("client_ip", out var ip) ? ip.GetString() : "N/A",
-                        endpoint = r.TryGetProperty("endpoint", out var ep) ? ep.GetString() : "N/A",
-                        method = r.TryGetProperty("method", out var m) ? m.GetString() : "N/A",
-                        routed_to = r.TryGetProperty("routed_to", out var rt) ? rt.GetString() : "unknown",
-                        is_anomaly = r.TryGetProperty("is_anomaly", out var ia) ? ia.GetBoolean() : false,
-                        confidence = r.TryGetProperty("confidence", out var conf) ? conf.GetDouble() : 0.0
+                        // Nested objects
+                        var routing = item.GetProperty("routing");
+                        var request = item.GetProperty("request");
+
+                        return new
+                        {
+                            request_id = routing.TryGetProperty("requestId", out var rid)
+                                ? rid.GetString()
+                                : "N/A",
+
+                            timestamp = routing.TryGetProperty("decidedAt", out var da)
+                                ? da.GetString()
+                                : null,
+
+                            client_ip = request.TryGetProperty("clientIp", out var ip)
+                                ? ip.GetString()
+                                : "N/A",
+
+                            endpoint = request.TryGetProperty("path", out var path)
+                                ? path.GetString()
+                                : "N/A",
+
+                            method = request.TryGetProperty("method", out var m)
+                                ? m.GetString()
+                                : "N/A",
+
+                            routed_to = routing.TryGetProperty("routedTo", out var rt)
+                                ? rt.GetString()
+                                : "unknown",
+
+                            is_anomaly = routing.TryGetProperty("isAnomaly", out var ia)
+                                ? ia.GetBoolean()
+                                : false,
+
+                            confidence = routing.TryGetProperty("confidence", out var conf)
+                                ? conf.GetDouble()
+                                : 0.0,
+
+                            model_version = routing.TryGetProperty("modelVersion", out var mv)
+                                ? mv.GetString()
+                                : "unknown",
+
+                            response_status = routing.TryGetProperty("responseStatusCode", out var sc)
+                                ? sc.GetInt32()
+                                : 0,
+
+                            response_time_ms = routing.TryGetProperty("responseTimeMs", out var rtms)
+                                ? rtms.GetInt32()
+                                : 0
+                        };
                     }).ToList(),
+
                     totalPages = totalPages,
-                    currentPage = page
+                    currentPage = currentPage
                 };
 
                 return Json(response);
+
             }
             catch (HttpRequestException ex)
             {
